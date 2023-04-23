@@ -1,5 +1,6 @@
 package edu.upc.dsa.models;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Usuario {
@@ -14,18 +15,30 @@ public class Usuario {
 
     Double dsaCoins = 25.00;
 
+    int vida = 50;
+
+    private List<Producto> listaProductosComprados = null;
+
+    private Juego equipo;
+
+    private Partida partida;
+
     public Usuario() {
 
     }
-
-    List<Producto> listaProductosComprados = null;
 
     public Usuario(String idUsuario, String nombre, String apellido, String apellido2) {
         this.idUsuario = idUsuario;
         this.nombre = nombre;
         this.apellido = apellido;
         this.apellido2 = apellido2;
+        this.listaProductosComprados = new ArrayList<>();
     }
+
+    public Usuario(String idUsuario) {
+        this.idUsuario = idUsuario;
+    }
+
 
     public String getIdUsuario() {
         return idUsuario;
@@ -67,11 +80,35 @@ public class Usuario {
         this.dsaCoins = dsaCoins;
     }
 
+    public int getVida() {
+        return vida;
+    }
+
+    public void setVida(int vida) {
+        this.vida = vida;
+    }
+
     public List<Producto> getListaProductosComprados() {
         return listaProductosComprados;
     }
 
     public void setListaProductosComprados(List<Producto> listaProductosComprados) {
         this.listaProductosComprados = listaProductosComprados;
+    }
+
+    public Juego getEquipo() {
+        return equipo;
+    }
+
+    public void setEquipo(Juego equipo) {
+        this.equipo = equipo;
+    }
+
+    public Partida getPartida() {
+        return partida;
+    }
+
+    public void setPartida(Partida partida) {
+        this.partida = partida;
     }
 }

@@ -1,42 +1,60 @@
 package edu.upc.dsa.models;
 
+import java.util.ArrayList;
+
 public class Juego {
+    private String nombre;
+    private ArrayList<Usuario> listaUsuarios;
+    private ArrayList<Juego> listaEquipos;
+    private int numeroUsuarios;
 
-    String idJuego;
+    public Juego() {
 
-    Integer equipos;
-
-    Integer personas;
-
-    public Juego() {}
-
-    public Juego(String idJuego, Integer equipos, Integer personas) {
-        this.idJuego = idJuego;
-        this.equipos = equipos;
-        this.personas = personas;
     }
 
-    public String getIdJuego() {
-        return idJuego;
+    public Juego(String nombre) {
+        this.nombre = nombre;
+        this.listaUsuarios = new ArrayList<>();
+        this.listaEquipos = new ArrayList<>();
     }
 
-    public void setIdJuego(String idJuego) {
-        this.idJuego = idJuego;
+    public void añadirJugador(Usuario usuario) {
+        listaUsuarios.add(usuario);
     }
 
-    public Integer getEquipos() {
-        return equipos;
+    public String getNombre() {
+        return nombre;
     }
 
-    public void setEquipos(Integer equipos) {
-        this.equipos = equipos;
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
     }
 
-    public Integer getPersonas() {
-        return personas;
+    public ArrayList<Usuario> getListaUsuarios() {
+        return listaUsuarios;
     }
 
-    public void setPersonas(Integer personas) {
-        this.personas = personas;
+    public void setListaUsuarios(ArrayList<Usuario> listaUsuarios) {
+        this.listaUsuarios = listaUsuarios;
+    }
+
+    public ArrayList<Juego> getListaEquipos() {
+        return listaEquipos;
+    }
+
+    public void setListaEquipos(ArrayList<Juego> listaEquipos) {
+        this.listaEquipos = listaEquipos;
+    }
+
+    public int getNumeroUsuarios() {
+        return numeroUsuarios;
+    }
+
+    public void setNumeroUsuarios(int numeroUsuarios) {
+        this.numeroUsuarios = numeroUsuarios;
+    }
+
+    public boolean equipoLleno(){
+        return listaUsuarios.size() == numeroUsuarios;
     }
 }

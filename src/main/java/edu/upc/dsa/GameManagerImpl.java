@@ -1,10 +1,11 @@
 package edu.upc.dsa;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
-import edu.upc.dsa.models.Exceptions.JuegoNoExisteException;
 import edu.upc.dsa.models.Juego;
 import edu.upc.dsa.models.Partida;
 import edu.upc.dsa.models.Producto;
@@ -12,18 +13,20 @@ import edu.upc.dsa.models.Usuario;
 
 public class GameManagerImpl implements GameManager {
 
-    protected List<Usuario> listaUsuarios;
-    protected List<Producto> listaProductos;
+    private Map<Integer, Usuario> usuarios;
+    private List<Usuario> listaUsuarios;
+    private Map<Integer, Producto> productos;
+    private List<Producto> listaProductos;
+    private Map<Integer, Juego> equipos;
+    private List<Juego> listaEquipos;
+    private int estado;
+    private static final int NO_INICIADO = 0;
+    private static final int INICIADO_EN_PREPARACION = 1;
+    private static final int INICIADO_EN_FUNCIONAMIENTO = 2;
+    private static final int FINALIZADO = 3;
 
-    protected List<Juego> listaJuegos;
-
+    static final Logger logger = Logger.getLogger(GameManagerImpl.class.getName());
     private static GameManagerImpl manager;
-
-    public GameManagerImpl(){
-        this.listaUsuarios = new ArrayList<>();
-        this.listaProductos = new ArrayList<>();
-        this.listaJuegos = new ArrayList<>();
-    }
 
     public static GameManagerImpl getInstance(){
         if (manager == null){
@@ -32,20 +35,34 @@ public class GameManagerImpl implements GameManager {
         return manager;
     }
 
-    static final java.util.logging.Logger logger = Logger.getLogger(GameManagerImpl.class.getName());
+    public GameManagerImpl(){
+        this.usuarios = new HashMap<>();
+        this.productos = new HashMap<>();
+        this.equipos = new HashMap<>();
+        this.listaEquipos = new ArrayList<>();
+        this.listaUsuarios = new ArrayList<>();
+        this.listaProductos= new ArrayList<>();
+        estado=NO_INICIADO;
+    }
+
     @Override
-    public Juego CrearJuego(String idJuego, Integer equipos, Integer personas) {
-        Juego j = getJuego(idJuego);
-        if (j==null){
-            Juego ju = new Juego(idJuego, equipos, personas);
-            listaJuegos.add(ju);
-            logger.info("Se ha creado el juego: " + ju);
-            return ju;
+    public void crearJuego(Integer equipos, Integer personas) {
+        if (estado != NO_INICIADO) {
+            logger.info("El juego está iniciado");
         }
-        else{
-            logger.info("El juego ya está creado");
+
+        for(int i = 1; i < equipos; i++){
+            Juego equipo = new Juego( "" + i);
+            for (int j = 1; j < personas; j++){
+                Usuario u = new Usuario("Personas: " + j);
+                equipo.añadirJugador(u);
+            }
+            listaEquipos.add(equipo);
+
         }
-        return null;
+        estado = INICIADO_EN_PREPARACION;
+        logger.info("El juego ha sido creado");
+
     }
 
     @Override
@@ -66,10 +83,9 @@ public class GameManagerImpl implements GameManager {
 
     @Override
     public Producto hacerCompra(String idUsuario, String idProducto) {
-
-        Usuario usuario = getUsuarioPorNombre(idUsuario);
+        Usuario usuario = getUsuarioPoridUsuario(idUsuario);
         if (usuario == null) {
-            logger.info("El usuario " + idUsuario + "no existe en la base de datos");
+            logger.info("El usuario " + idUsuario + " no existe en la base de datos");
         }
         else {
             Producto producto = getProductoPoridProducto(idProducto);
@@ -80,61 +96,124 @@ public class GameManagerImpl implements GameManager {
                 usuario.getListaProductosComprados().add(producto);
                 double dinero = usuario.getDsaCoins() - producto.getPrecio();
                 usuario.setDsaCoins(dinero);
-                logger.info("Objeto" + idProducto + "comprado");
-                logger.info(idUsuario + "ahora tienes:" + producto + "dsaCoins");
+                logger.info("Objeto " + idProducto + " comprado");
+                logger.info(idUsuario + "ahora tienes: " + producto + " dsaCoins");
                 return producto;
             }
         }
         return null;
-
     }
 
     @Override
-    public Partida startPartida(String idUsuario) {
-        return null;
+    public void startPartida(String idUsuario) {
+
+        if (estado == NO_INICIADO) {
+            logger.info("El juego no ha sido creado todavía");
+        }
+
+        Usuario usuario = getUsuarioPoridUsuario(idUsuario);
+        if (usuario == null) {
+            logger.info("El usuario " + idUsuario + " no existe");
+        }
+
+        if (usuario.getPartida() != null) {
+            logger.info(idUsuario + " Tienes una partida activa");
+        }
+
+        Juego equipo = obtenerCapacidadEquipo();
+        equipo.añadirJugador(usuario);
+        usuario.setEquipo(equipo);
+        usuario.setPartida(new Partida(equipo));
+        logger.info(idUsuario + " Te ha tocado equipo: " + equipo.getNombre());
+        estado = INICIADO_EN_FUNCIONAMIENTO;
+        logger.info("Ha comenzado la partida");
     }
 
     @Override
-    public Juego consultaEstadoJuego() {
-        return null;
+    public String consultarEstadoJuego() {
+        if (estado == 0) {
+            logger.info("El juego no está iniciado");
+        } else if (estado == INICIADO_EN_PREPARACION) {
+            logger.info("El juego esta INICIADO_EN_PREPARACION");
+        } else if (estado == INICIADO_EN_FUNCIONAMIENTO) {
+            logger.info("El juego esta INICIADO_EN_FUNCIONAMIENTO");
+        } else if (estado == FINALIZADO) {
+            logger.info("El juego esta FINALIZADO");
+        }
+        return "Sorpresa, no existe";
+    }
+
+
+    @Override
+    public void actualizarVida(String idUsuario, int vida) {
+        if (estado != INICIADO_EN_FUNCIONAMIENTO) {
+            logger.info("No existe la partida");
+        }
+        Usuario usuario = getUsuarioPoridUsuario(idUsuario);
+        if (usuario == null) {
+            logger.info("El usuario no existe");
+        }
+        int vidaActualiada = usuario.getVida() - vida;
+        if (vidaActualiada <= 0) {
+            vidaActualiada = 0;
+            logger.info(idUsuario + " no te queda vida (RIP)");
+        }
+        usuario.setVida(vidaActualiada);
+        logger.info(idUsuario + " tienes " + vidaActualiada);
     }
 
     @Override
-    public Usuario actualizarVida(String idUsuario) {
-        return null;
+    public Integer consultarVida(String idUsuario) {
+        Usuario usuario = getUsuarioPoridUsuario(idUsuario);
+        if (usuario == null) {
+            logger.info("El usuario no existe");
+        }
+        if (usuario.getPartida() == null) {
+            logger.info("No está en partida");
+        }
+        logger.info("la vida es" + usuario.getVida());
+        return usuario.getVida();
     }
 
     @Override
-    public Usuario consultarVida(String idUsuario) {
-        return null;
-    }
-
-    @Override
-    public Partida consultarVidaEquipo() {
-        return null;
+    public Integer consultarVidaEquipo(String idEquipo) {
+        int vidaTotalEquipo = 0;
+        for (Usuario usuario : listaUsuarios) {
+            if (usuario.getEquipo().getNombre().equals(idEquipo)) {
+                vidaTotalEquipo += usuario.getVida();
+            }
+        }
+        return vidaTotalEquipo;
     }
 
     @Override
     public void finalizarJuego() {
-
+        if (estado != INICIADO_EN_FUNCIONAMIENTO) {
+            logger.info("Aun hay una partida en funcionamiento");
+            return;
+        }
+        estado = FINALIZADO;
+        logger.info("La partida ha acabado");
     }
 
-
-    //extra
-
-    @Override
-    public int size() {
-        return listaJuegos.size();
+    private Juego obtenerCapacidadEquipo() {
+        for (Juego equipo : listaEquipos) {
+            if (!equipo.equipoLleno()) {
+                return equipo;
+            }
+        }
+        return null;
     }
-    public Usuario getUsuarioPorNombre(String nombre){
+
+    public Usuario getUsuarioPoridUsuario(String idUsuario){
         for (Usuario u: this.listaUsuarios) {
-            if(u.getNombre().equals(nombre)){
+            if(u.getIdUsuario().equals(idUsuario)){
                 return u;
             }
         }
         return null;
     }
-
+    @Override
     public Producto getProductoPoridProducto(String idProducto){
         for (Producto p: this.listaProductos) {
             if(p.getIdProducto().equals(idProducto)){
@@ -144,15 +223,11 @@ public class GameManagerImpl implements GameManager {
         return null;
     }
 
-
-    public Juego getJuego(String idJuego) {
-        for(Juego juego : this.listaJuegos) {
-            if(juego.getIdJuego().equals(idJuego)){
-                return juego;
-            }
-        }
+    @Override
+    public Usuario getUsuarioPorNombre(String idUsuario) {
         return null;
     }
+
 
     @Override
     public void clear() {
